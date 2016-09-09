@@ -80,14 +80,20 @@ def fetch_document(document):
 	# metadata changes. Ensure that weird data in CRS fields doesn't
 	# create invalid filenames for us by sanitizing the fields.
 	crs_product_id = re.sub(r"[^A-Za-z0-9]", "", document['ProductNumber'])
+	crs_report_date = re.sub(r"\D", "", document['CoverDate'])[0:8]
 	metadata_filename = \
 		"documents/" \
 		+ "_".join([
-			re.sub(r"\D", "", document['CoverDate'])[0:8],
+			crs_report_date,
 			crs_product_id,
 			sha1(json.dumps(document, sort_keys=True).encode("utf8"))
 		]) \
 		+ ".json"
+
+	# Don't bother fetching files that are very old. We already have
+	# these.
+	if crs_report_date < "201604":
+		return False
 
 	# If we've already seen this, then we're done.
 	if has_gotten_file(metadata_filename):
@@ -114,7 +120,7 @@ def fetch_document(document):
 		file_filename = \
 			"files/" \
 			+ "_".join([
-				re.sub(r"\D", "", document['CoverDate'])[0:8],
+				crs_report_date,
 				document['ProductNumber'],
 				sha1(file_content)
 			]) \
