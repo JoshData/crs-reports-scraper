@@ -172,6 +172,7 @@ def save_file(filename, payload):
 	# Record the file in our database. Cleear an existing record in case
 	# we're saving a file with a changed hash (although that'd be strange
 	# since the hash is in the filename).
+	content_hash = sha1(payload)
 	cur = db.cursor()
 	cur.execute("DELETE FROM fetched WHERE content_hash = ?", (content_hash,))
 	cur.execute("INSERT INTO fetched values (?, ?, ?)", (
