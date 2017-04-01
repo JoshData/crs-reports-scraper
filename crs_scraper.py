@@ -33,7 +33,7 @@ def main():
 	pageNumber = 1
 	while True:
 		print("Fetching page", pageNumber, "...")
-		had_stuff = fetch_from_json_listing("http://www.crs.gov/search/results?term=orderBy=Date&navids=4294952831&pageNumber=%d" % pageNumber)
+		had_stuff = fetch_from_json_listing("http://www.crs.gov/search/results?term=orderBy=Date&navIds=4294952831&navIds=4294938681&pageNumber=%d" % pageNumber)
 		if had_stuff:
 			pageNumber += 1
 			continue
