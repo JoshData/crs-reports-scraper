@@ -1,9 +1,11 @@
 # CRS reports scraper.
 
+import sys
 import re
 import os
 import os.path
 import datetime
+import time
 import json
 import hashlib
 import base64
@@ -25,10 +27,43 @@ db = sqlite3.connect('crs_scraper_database.db')
 
 #####################################################################
 
-def main():
-	# Initialize the database on first use.
-	create_db_tables()
+def run_in_background():
+	def MessageBox(message, buttons=0):
+		from ctypes import windll
+		return windll.user32.MessageBoxW(0, message, "CRS Reports Scraper", buttons)
 
+	# Ask the user if they want to start the scraper in the background?
+	if MessageBox("Would you like to start the background CRS reports scraper?", buttons=4) != 6:
+		MessageBox("Okay, program stopping.")
+		return
+
+	try:
+
+		# Periodically run the scraper in the background around 6pm.
+		while True:
+			# Is it close to 6pm?
+			if datetime.datetime.now().hour != 18:
+				# Pause and check again.
+				wait_time = datetime.timedelta(minutes=23)
+				time.sleep(wait_time.total_seconds())
+				continue
+
+			# Run the scraper once.
+			MessageBox("Scraping!")
+			run_scraper()
+
+			# Delay 12 hours to make sure we don't scrape more than once
+			# on the same day. Then start waiting again until it's the
+			# right time for another scrape.
+			wait_time = datetime.timedelta(hours=12)
+			time.sleep(wait_time.total_seconds())
+			continue
+
+	except Exception as e:
+		MessageBox("The CRS scraper ran into an error and is terminating: " + str(e))
+		raise
+
+def run_scraper():
 	# Loop through the pages of the listing of CRS reports.
 	pageNumber = 1
 	while True:
@@ -184,4 +219,12 @@ def save_file(filename, payload):
 
 #####################################################################
 
-main()
+# Initialize the database on first use.
+create_db_tables()
+
+if not sys.stdin is None:
+	# We're running on a console.
+	run_scraper()
+else:
+	# We're running inside pythonw without a console.
+	run_in_background()
