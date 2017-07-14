@@ -185,11 +185,41 @@ def fetch_document(document):
 			"headers": file_headers,
 			"sha1": sha1(file_content),
 			"filename": file_filename,
+			"images": { },
 		}
 
 		# Save the file to disk and add it to our database so we know we don't
 		# need to fetch it again.
 		save_file(file_filename, file_content)
+
+		# Scan HTML documents for images and fetch those too.
+		if file["FormatType"] == "HTML":
+			for img in re.findall(b'src="(/products/Getimages/\?directory=[^"]+&id=/[^"]+\.png)"', file_content):
+				img = img.decode("ascii")
+				
+				# Fetch and save the image, and add a mapping in the
+				# metadata from CRS.gov image paths to the filename
+				# we stored it in.
+				if "--test" not in sys.argv:
+					image_url = "http://crs.gov" + img
+					print(image_url, '...')
+					response = scraper.get(image_url)
+					image_content = response.content
+				else:
+					# Load test data.
+					image_content = b"someinvalidrawdata"
+
+				image_filename = \
+					"files/" \
+					+ "_".join([
+						crs_report_date,
+						document['ProductNumber'],
+						"images",
+						sha1(image_content)
+					]) \
+					+ ".png"
+				file["_"]["images"][img] = image_filename
+				save_file(image_filename, image_content)
 
 
 	# Save the metadata record as a file as well, and that's how we'll know what
@@ -218,6 +248,7 @@ def has_gotten_file(filename):
 def save_file(filename, payload):
 	# Save the file. Make a directory for it if the directory doesn't exist.
 	os.makedirs(os.path.dirname(filename), exist_ok=True)
+	print(">", filename)
 	with open(filename, "wb") as f:
 		f.write(payload)
 
