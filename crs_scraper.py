@@ -68,7 +68,7 @@ def run_scraper():
 	pageNumber = 1
 	while True:
 		print("Fetching page", pageNumber, "...")
-		had_stuff = fetch_from_json_listing("http://www.crs.gov/search/results?term=orderBy=Date&navIds=4294952831&navIds=4294938681&pageNumber=%d" % pageNumber)
+		had_stuff = fetch_from_json_listing(pageNumber)
 		if had_stuff:
 			pageNumber += 1
 			continue
@@ -92,10 +92,16 @@ def create_db_tables():
 				raise e
 	db.commit()
 
-def fetch_from_json_listing(url):
-	# Requests one of the CRS JSON URLs that lists documents.
-	body = scraper.get(url).content
-	documents = json.loads(body.decode("utf8"))
+def fetch_from_json_listing(pageNumber):
+	if "--test" not in sys.argv:
+		# Requests one of the CRS JSON URLs that lists documents.
+		url = "http://www.crs.gov/search/results?term=orderBy=Date&navIds=4294952831&navIds=4294938681&pageNumber=%d" \
+			% pageNumber
+		body = scraper.get(url).content
+		documents = json.loads(body.decode("utf8"))
+	else:
+		# Use test data from a file on disk.
+		documents = json.load(open(os.path.join("test", "SearchResults_%d.json" % pageNumber)))
 
 	# process each document
 	for doc in documents["SearchResults"]:
@@ -141,13 +147,24 @@ def fetch_document(document):
 	# Fetch the files mentioned in the metadata and augment the metadata
 	# with the SHA1 of each file.
 	for file in document["FormatList"]:
-		# Construct full URL.
-		file_url = "http://crs.gov/" + file["Url"]
+		if "--test" not in sys.argv:
+			# Construct full URL.
+			file_url = "http://crs.gov/" + file["Url"]
 
-		# Fetch content.
-		print(file_url, '...')
-		response = scraper.get(file_url)
-		file_content = response.content
+			# Fetch content.
+			print(file_url, '...')
+			response = scraper.get(file_url)
+			file_url = response.url
+			file_content = response.content
+			file_encoding = response.encoding
+			file_headers = dict(response.headers)
+
+		else:
+			# Load test data.
+			file_url = "file://local/path"
+			file_content = open(os.path.join("test", file["Url"]), "rb").read()
+			file_encoding = "unknown"
+			file_headers = { }
 
 		# Assign it a filename using the document's cover date, the document's
 		# product identifier, the SHA1 hash of the file's content, and the
@@ -163,9 +180,9 @@ def fetch_document(document):
 
 		# Add file metadata to the document.
 		file["_"] = {
-			"encoding": response.encoding,
-			"url": response.url,
-			"headers": dict(response.headers),
+			"encoding": file_encoding,
+			"url": file_url,
+			"headers": file_headers,
 			"sha1": sha1(file_content),
 			"filename": file_filename,
 		}

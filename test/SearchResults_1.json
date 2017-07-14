@@ -1,0 +1,18 @@
+{
+	"SearchResults": [
+		{
+			"ProductNumber": "TEST01",
+			"CoverDate": "2017-07-20",
+			"FormatList": [
+				{
+					"Url": "TEST01.html",
+					"FormatType": "HTML"
+				},
+				{
+					"Url": "TEST01.pdf",
+					"FormatType": "PDF"
+				}
+			]
+		}
+	]
+}
