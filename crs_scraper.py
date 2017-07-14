@@ -12,6 +12,7 @@ import base64
 import sqlite3
 
 import scrapelib
+import dropbox
 
 # Create a scraper that automatically throttles our requests
 # so that we don't overload the CRS server.
@@ -246,11 +247,16 @@ def has_gotten_file(filename):
 	return r
 
 def save_file(filename, payload):
-	# Save the file. Make a directory for it if the directory doesn't exist.
-	os.makedirs(os.path.dirname(filename), exist_ok=True)
 	print(">", filename)
-	with open(filename, "wb") as f:
-		f.write(payload)
+
+	if not dropbox_client:
+		# Save the file. Make a directory for it if the directory doesn't exist.
+		os.makedirs(os.path.dirname(filename), exist_ok=True)
+		with open(filename, "wb") as f:
+			f.write(payload)
+	else:
+		# Upload to Dropbox.
+		dropbox_client.files_upload(payload, dropbox_root_path + '/' + filename)
 
 	# Record the file in our database. Cleear an existing record in case
 	# we're saving a file with a changed hash (although that'd be strange
@@ -269,6 +275,21 @@ def save_file(filename, payload):
 
 # Initialize the database on first use.
 create_db_tables()
+
+# Load Dropbox auth from dropbox_access_token.txt, which should look
+# like:
+#  TOKEN={generate an access token from the app page}
+#  PATH=/name
+# If the app has permission to upload to an app directory only, the
+# uploads will be put in Apps\CRS-Scraper-Uploads\name.
+dropbox_client = None
+dropbox_root_path = None
+if os.path.exists("dropbox_access_token.txt"):
+	dropbox_authz = dict(line.strip().split("=",1) for line in open("dropbox_access_token.txt") if line.strip())
+	dropbox_client = dropbox.Dropbox(dropbox_authz["TOKEN"])
+	dropbox_user = dropbox_client.users_get_current_account()
+	dropbox_root_path = dropbox_authz["PATH"]
+	print("Uploading to Dropbox account", dropbox_user.name.display_name, dropbox_user.email, "at", dropbox_root_path)
 
 if not sys.stdin is None:
 	# We're running on a console.
