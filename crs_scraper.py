@@ -17,7 +17,7 @@ import dropbox
 # Create a scraper that automatically throttles our requests
 # so that we don't overload the CRS server.
 scraper = scrapelib.Scraper(
-	requests_per_minute=20,
+	requests_per_minute=35,
 	retry_attempts=2,
 	retry_wait_seconds=10)
 
