@@ -15,5 +15,5 @@ To upload reports to Dropbox, create a file:
 dropbox_access_token.txt
 ------------------------
 TOKEN=dropbox access token generated at https://www.dropbox.com/developers/apps
-PATH=reports
+PATH=/reports
 ```
