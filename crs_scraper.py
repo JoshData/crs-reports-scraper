@@ -50,7 +50,6 @@ def run_in_background():
 				continue
 
 			# Run the scraper once.
-			MessageBox("Scraping!")
 			run_scraper()
 
 			# Delay 12 hours to make sure we don't scrape more than once
