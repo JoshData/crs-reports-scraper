@@ -1,4 +1,4 @@
-# CRS reports scraper.
+# http://www.crs.gov/conan/constitutionannotated scraper.
 
 import sys
 import re
