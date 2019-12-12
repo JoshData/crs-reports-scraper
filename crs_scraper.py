@@ -40,16 +40,19 @@ def run_in_background():
 
 	try:
 
-		# Periodically run the scraper in the background around 6pm.
+		# Periodically run the scraper in the background around 6pm. But start
+		# one run immediately so that we can test that it works.
+		first = True
 		while True:
 			# Is it close to 6pm?
-			if datetime.datetime.now().hour != 18:
+			if not first and datetime.datetime.now().hour != 18:
 				# Pause and check again.
 				wait_time = datetime.timedelta(minutes=23)
 				time.sleep(wait_time.total_seconds())
 				continue
 
 			# Run the scraper once.
+			first = False
 			run_scraper()
 
 			# Delay 12 hours to make sure we don't scrape more than once
